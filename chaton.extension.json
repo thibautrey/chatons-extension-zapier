@@ -1,0 +1,247 @@
+{
+  "id": "@thibautrey/chatons-extension-zapier",
+  "name": "Zapier",
+  "version": "1.0.1",
+  "description": "Interact with your Zapier instance to manage Zaps, apps, actions, authentications, zap templates, and more.",
+  "icon": "./icon.png",
+  "capabilities": [
+    "llm.tools",
+    "storage.kv"
+  ],
+  "apis": {
+    "exposes": [
+      { "name": "zapier.list_zaps", "version": "1.0.0" },
+      { "name": "zapier.get_zap", "version": "1.0.0" },
+      { "name": "zapier.create_zap", "version": "1.0.0" },
+      { "name": "zapier.enable_zap", "version": "1.0.0" },
+      { "name": "zapier.disable_zap", "version": "1.0.0" },
+      { "name": "zapier.list_apps", "version": "1.0.0" },
+      { "name": "zapier.get_actions", "version": "1.0.0" },
+      { "name": "zapier.get_input_fields", "version": "1.0.0" },
+      { "name": "zapier.get_output_fields", "version": "1.0.0" },
+      { "name": "zapier.get_choices", "version": "1.0.0" },
+      { "name": "zapier.list_authentications", "version": "1.0.0" },
+      { "name": "zapier.list_zap_templates", "version": "1.0.0" },
+      { "name": "zapier.guess_zap", "version": "1.0.0" },
+      { "name": "zapier.step_test", "version": "1.0.0" }
+    ]
+  },
+  "llm": {
+    "tools": [
+      {
+        "name": "zapier_list_zaps",
+        "label": "List Zapier Zaps",
+        "description": "List all Zaps in your Zapier account. Supports filtering by app and pagination.",
+        "promptSnippet": "List Zaps from your Zapier account.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "app": { "type": "string", "description": "Filter Zaps by app name or ID." },
+            "offset": { "type": "number", "description": "Pagination offset." },
+            "limit": { "type": "number", "description": "Max number of Zaps to return (default 10, max 100)." }
+          }
+        }
+      },
+      {
+        "name": "zapier_get_zap",
+        "label": "Get Zapier Zap",
+        "description": "Get details of a specific Zap by its ID.",
+        "promptSnippet": "Get details of a specific Zap.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "description": "Zap ID." }
+          },
+          "required": ["id"]
+        }
+      },
+      {
+        "name": "zapier_create_zap",
+        "label": "Create Zapier Zap",
+        "description": "Create a new Zap with a title and steps. Each step requires an action ID, inputs, and optionally an authentication ID.",
+        "promptSnippet": "Create a new Zap on Zapier.",
+        "promptGuidelines": [
+          "Use zapier_list_apps and zapier_get_actions first to discover available apps and action IDs.",
+          "Use zapier_get_input_fields to discover required inputs for each action before creating a Zap."
+        ],
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "description": "Human-readable Zap name." },
+            "steps": {
+              "type": "array",
+              "description": "Ordered list of steps. Each step has action (action ID), inputs (key-value map), authentication (auth ID or null), and optional alias.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": { "type": "string", "description": "Action identifier (e.g. 'AppKey:ActionKey')." },
+                  "inputs": { "type": "object", "description": "Key-value input fields for this step." },
+                  "authentication": { "type": "string", "description": "Authentication ID to use, or null." },
+                  "alias": { "type": "string", "description": "Optional step alias." }
+                },
+                "required": ["action", "inputs"]
+              }
+            }
+          },
+          "required": ["title", "steps"]
+        }
+      },
+      {
+        "name": "zapier_enable_zap",
+        "label": "Enable Zapier Zap",
+        "description": "Enable (turn on) a Zap by its ID.",
+        "promptSnippet": "Enable a Zap.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "description": "Zap ID." }
+          },
+          "required": ["id"]
+        }
+      },
+      {
+        "name": "zapier_disable_zap",
+        "label": "Disable Zapier Zap",
+        "description": "Disable (turn off) a Zap by its ID.",
+        "promptSnippet": "Disable a Zap.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "description": "Zap ID." }
+          },
+          "required": ["id"]
+        }
+      },
+      {
+        "name": "zapier_list_apps",
+        "label": "List Zapier Apps",
+        "description": "List available apps on Zapier. Supports search and pagination.",
+        "promptSnippet": "List available Zapier apps.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": { "type": "string", "description": "Search query to filter apps by name." },
+            "offset": { "type": "number", "description": "Pagination offset." },
+            "limit": { "type": "number", "description": "Max results (default 10, max 100)." }
+          }
+        }
+      },
+      {
+        "name": "zapier_get_actions",
+        "label": "Get Zapier Actions",
+        "description": "List available actions (triggers, creates, searches) for a specific app.",
+        "promptSnippet": "Get available actions for a Zapier app.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "app": { "type": "string", "description": "App ID to list actions for." },
+            "action_type": { "type": "string", "enum": ["read", "write"], "description": "Filter by action type: 'read' for triggers/searches, 'write' for creates/actions." }
+          },
+          "required": ["app"]
+        }
+      },
+      {
+        "name": "zapier_get_input_fields",
+        "label": "Get Zapier Input Fields",
+        "description": "Get input fields required for a specific action. Needed before creating a Zap step.",
+        "promptSnippet": "Get required input fields for a Zapier action.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "Action identifier." },
+            "authentication": { "type": "string", "description": "Authentication ID for context." },
+            "inputs": { "type": "object", "description": "Existing inputs for dependent field resolution." }
+          },
+          "required": ["action"]
+        }
+      },
+      {
+        "name": "zapier_get_output_fields",
+        "label": "Get Zapier Output Fields",
+        "description": "Get output fields produced by a specific action.",
+        "promptSnippet": "Get output fields for a Zapier action.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "Action identifier." },
+            "authentication": { "type": "string", "description": "Authentication ID for context." },
+            "inputs": { "type": "object", "description": "Existing inputs for dependent field resolution." }
+          },
+          "required": ["action"]
+        }
+      },
+      {
+        "name": "zapier_get_choices",
+        "label": "Get Zapier Field Choices",
+        "description": "Get dropdown choices for a specific input field of an action.",
+        "promptSnippet": "Get choices for a Zapier action input field.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "Action identifier." },
+            "field": { "type": "string", "description": "Field key to get choices for." },
+            "authentication": { "type": "string", "description": "Authentication ID." },
+            "inputs": { "type": "object", "description": "Existing inputs for context." }
+          },
+          "required": ["action", "field"]
+        }
+      },
+      {
+        "name": "zapier_list_authentications",
+        "label": "List Zapier Authentications",
+        "description": "List connected authentication accounts for the user.",
+        "promptSnippet": "List connected Zapier authentication accounts.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "app": { "type": "string", "description": "Filter by app ID." },
+            "offset": { "type": "number", "description": "Pagination offset." },
+            "limit": { "type": "number", "description": "Max results." }
+          }
+        }
+      },
+      {
+        "name": "zapier_list_zap_templates",
+        "label": "List Zapier Zap Templates",
+        "description": "List available Zap templates, optionally filtered by apps.",
+        "promptSnippet": "List Zapier Zap templates.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "apps": { "type": "string", "description": "Comma-separated app IDs to filter templates." },
+            "offset": { "type": "number", "description": "Pagination offset." },
+            "limit": { "type": "number", "description": "Max results." }
+          }
+        }
+      },
+      {
+        "name": "zapier_guess_zap",
+        "label": "Guess Zapier Zap",
+        "description": "Use AI to suggest a Zap configuration based on a natural language description. Beta feature.",
+        "promptSnippet": "AI-suggest a Zap from a natural language description.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string", "description": "Natural language description of desired automation." }
+          },
+          "required": ["description"]
+        }
+      },
+      {
+        "name": "zapier_step_test",
+        "label": "Test Zapier Step",
+        "description": "Test a single step of a Zap to verify it works correctly.",
+        "promptSnippet": "Test a Zapier Zap step.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "description": "Action identifier to test." },
+            "authentication": { "type": "string", "description": "Authentication ID." },
+            "inputs": { "type": "object", "description": "Input fields for the test." }
+          },
+          "required": ["action"]
+        }
+      }
+    ]
+  }
+}

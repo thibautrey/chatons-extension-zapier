@@ -1,0 +1,12 @@
+{
+  "name": "@thibautrey/chatons-extension-zapier",
+  "version": "1.0.1",
+  "description": "Manage Zapier automations directly from Chatons",
+  "keywords": ["zapier", "automation", "zaps", "workflow"],
+  "author": "thibautrey",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thibautrey/chatons-extension-zapier"
+  }
+}
